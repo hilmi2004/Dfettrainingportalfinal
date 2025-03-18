@@ -7,7 +7,7 @@ const Landingpage = () => {
                 <ul className="flex items-center justify-between text-2xl">
                     <li><a href="#" className="text-[#1321da] font-bold bg-white hover: rounded-3xl py-4 px-8 ">Home</a>
                     </li>
-                    <li><a href="#" className="text-white hover:bg-gray-600 rounded-4xl py-3 px-6">About</a></li>
+                    {/*<li><a href="#" className="text-white hover:bg-gray-600 rounded-4xl py-3 px-6">About</a></li>*/}
                     <li><a href="#" className="text-white hover:bg-gray-600 rounded-4xl py-3 px-6">Services</a></li>
                     <li><a href="#" className="text-white hover:bg-gray-600 rounded-4xl py-3 px-6">Courses</a></li>
                     <li><a href="#" className="text-white hover:bg-gray-600 rounded-4xl py-3 px-6">Contact</a></li>
