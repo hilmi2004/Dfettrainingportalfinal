@@ -25,9 +25,15 @@ const RegistrationPage = () => {
         "12 months": 3,
     };
 
-    const calculatePrice = (selectedCourse, selectedDuration, appliedCoupon = "") => {
+    const modeMultiplier = {
+        "Online": 1,
+        "Physical": 1.2,
+    }
+
+    const calculatePrice = (selectedCourse, selectedDuration,selectedMode, appliedCoupon = "") => {
         if (selectedCourse && selectedDuration) {
             let totalPrice = coursePrices[selectedCourse] * durationMultiplier[selectedDuration];
+            totalPrice = totalPrice * modeMultiplier[selectedMode];
 
             if (appliedCoupon === "12345") {
                 totalPrice *= 0.9; // Apply 10% discount
@@ -49,6 +55,12 @@ const RegistrationPage = () => {
         const selectedDuration = event.target.value;
         setDuration(selectedDuration);
         calculatePrice(course, selectedDuration, coupon);
+    };
+
+    const handleModeChange = (event) => {
+        const selectedMode = event.target.value;
+        setTeachingMode(selectedMode);
+        calculatePrice(course, duration, selectedMode);
     };
 
     const validateForm = () => {
@@ -158,17 +170,17 @@ const RegistrationPage = () => {
                         {errors.duration && <p className="text-red-500">{errors.duration}</p>}
                     </div>
 
-                    <div>
+                    <div className="col-span-2">
                         <label className="block font-medium">Mode of Teaching</label>
                         <select
                             value={teachingMode}
-                            onChange={(e) => setTeachingMode(e.target.value)}
+                            onChange={handleModeChange}
                             className="mt-1 w-full px-4 py-2 border rounded-md border-[#2e97e9]"
+
                         >
                             <option value="">Select Mode of Teaching</option>
-                            <option value="online">Online</option>
-                            <option value="physical">Physical</option>
-                            <option value="hybrid">Hybrid</option>
+                            <option value="Online">Online</option>
+                            <option value="Physical">Physical</option>
                         </select>
                         {errors.teachingMode && <p className="text-red-500">{errors.teachingMode}</p>}
                     </div>
@@ -182,7 +194,7 @@ const RegistrationPage = () => {
                             value={coupon}
                             onChange={(e) => {
                                 setCoupon(e.target.value);
-                                calculatePrice(course, duration, e.target.value);
+                                calculatePrice(course, duration,teachingMode, e.target.value);
                             }}
                         />
                     </div>

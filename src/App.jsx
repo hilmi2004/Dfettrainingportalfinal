@@ -7,6 +7,7 @@ import Testimonial from "@/Components/Testimonial.jsx";
 import {motion} from "framer-motion";
 import Faq from "@/Components/Faq.jsx";
 
+
 const sectionVariants = {
     hidden: { opacity: 0, y: 50 }, // Start slightly lower and invisible
     visible: { opacity: 1, y: 0 }, // Fade in and move to normal position
@@ -16,7 +17,10 @@ const transition = { duration: 0.8, ease: "easeInOut" }; // Smooth transition
 
 const App = () => {
     return (
+        
+        
         <div>
+
             <motion.div
                 variants={sectionVariants}
                 initial="hidden"
@@ -70,6 +74,8 @@ const App = () => {
             <motion.div variants={sectionVariants} initial={"hidden"} whileInView={"visible"} transition={transition} viewport={{once:true,amount:0.2}}>
                 <Footer/>
             </motion.div>
+
+        
 
         </div>
     );

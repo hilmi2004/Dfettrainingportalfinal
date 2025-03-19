@@ -23,8 +23,10 @@ const Landingpage = () => {
                 <div className="text-2xl space-x-4  ">
                     <button className="bg-[#1321da] text-white p-3 border-3 border-[#1321da] rounded-xl">Read More
                     </button>
+                    <a>
                     <button className="bg-white text-[#1321da] p-3 border-3 border-[#1321da] rounded-xl">Enroll Now
                     </button>
+                    </a>
                 </div>
             </div>
         </div>
