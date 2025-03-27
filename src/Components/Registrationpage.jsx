@@ -1,4 +1,6 @@
+
 import React, { useState } from "react";
+import {FaCheck, FaStop} from "react-icons/fa";
 
 const RegistrationPage = () => {
     const [firstName, setFirstName] = useState("");
@@ -11,6 +13,8 @@ const RegistrationPage = () => {
     const [coupon, setCoupon] = useState("");
     const [price, setPrice] = useState(0);
     const [errors, setErrors] = useState({});
+    const [Validated, setValidated] = useState(false);
+
 
     const coursePrices = {
         "Web development": 50000,
@@ -31,15 +35,17 @@ const RegistrationPage = () => {
     }
 
     const calculatePrice = (selectedCourse, selectedDuration,selectedMode, appliedCoupon = "") => {
-        if (selectedCourse && selectedDuration) {
+        if (selectedCourse && selectedDuration && selectedMode ) {
             let totalPrice = coursePrices[selectedCourse] * durationMultiplier[selectedDuration];
             totalPrice = totalPrice * modeMultiplier[selectedMode];
+            setPrice(totalPrice);
+
 
             if (appliedCoupon === "12345") {
                 totalPrice *= 0.9; // Apply 10% discount
             }
-
             setPrice(totalPrice);
+
         } else {
             setPrice(0);
         }
@@ -48,13 +54,13 @@ const RegistrationPage = () => {
     const handleCourseChange = (event) => {
         const selectedCourse = event.target.value;
         setCourse(selectedCourse);
-        calculatePrice(selectedCourse, duration, coupon);
+        calculatePrice(selectedCourse, duration, teachingMode);
     };
 
     const handleDurationChange = (event) => {
         const selectedDuration = event.target.value;
         setDuration(selectedDuration);
-        calculatePrice(course, selectedDuration, coupon);
+        calculatePrice(course, selectedDuration, teachingMode);
     };
 
     const handleModeChange = (event) => {
@@ -80,19 +86,47 @@ const RegistrationPage = () => {
         return Object.keys(newErrors).length === 0; // Returns true if no errors
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         if (validateForm()) {
-            console.log("Form Submitted:", { firstName, lastName, phoneNumber, email, course, duration, teachingMode, coupon, price });
+            setValidated(true);
+
+            // Send registration details to backend
+            try {
+                const response = await fetch("http://localhost:2000/send-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ firstName, lastName, email, phoneNumber, course, duration, teachingMode, price })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    console.log("Email sent:", data.message);
+                } else {
+                    console.error("Error:", data.message);
+                }
+            } catch (error) {
+                console.error("Failed to send email:", error);
+            }
         }
     };
 
+
     return (
         <div className="flex items-center justify-center bg-white py-9">
-            <div className="bg-[#f3f9ff] p-8 rounded-lg shadow-md w-full max-w-lg">
+            <div className="bg-[#f3f9ff] p-8 rounded-lg shadow-md w-full max-w-lg relative">
                 <h2 className="text-2xl font-bold text-center mb-6">Course Registration</h2>
 
                 <form className="grid grid-cols-2 gap-4" onSubmit={handleSubmit}>
+                    {Validated &&
+                        <div  className="bg-white inset-1 p-10 rounded-lg shadow-lg items-center justify-center flex flex-col absolute top-1/2  lg:w-125 text-center z-30 border border-gray-200">
+                            <FaCheck className="bg-green-600 text-white rounded-full p-4" size="30" />
+                            {/*//Apply a better method to try and curtail this*/}
+                            <FaStop className="absolute top-0 right-0" size="20" onClick={() =>{setValidated(false)}}/>
+                            <h1 className="text-4xl font-bold text-green-600 tracking-wide leading-normal">Successfully Registered</h1>
+                            <p className="text-xl font-semibold text-black">Thank You for registering for our course.</p>
+                        </div>
+                    }
                     <div>
                         <label className="block font-medium">First Name</label>
                         <input

@@ -6,6 +6,7 @@ import Astudent from "./Components/Astudent.jsx";
 import Testimonial from "@/Components/Testimonial.jsx";
 import {motion} from "framer-motion";
 import Faq from "@/Components/Faq.jsx";
+import Login from "@/pages/Login.jsx";
 
 
 const sectionVariants = {
@@ -74,6 +75,8 @@ const App = () => {
             <motion.div variants={sectionVariants} initial={"hidden"} whileInView={"visible"} transition={transition} viewport={{once:true,amount:0.2}}>
                 <Footer/>
             </motion.div>
+
+            <Login/>
 
         
 
