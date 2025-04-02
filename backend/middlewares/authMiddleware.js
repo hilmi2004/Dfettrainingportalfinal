@@ -1,19 +1,46 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
-dotenv.config(); // Load environment variables
-
+dotenv.config();
+// authMiddleware.js
 const authMiddleware = (req, res, next) => {
-    const token = req.header("Authorization");
-    if (!token) return res.status(401).json({ message: "Access Denied" });
+    let token;
 
-    try {
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = verified; // Attach user info to request
-        next(); // Continue to next middleware/route
-    } catch (error) {
-        res.status(400).json({ message: "Invalid Token" },error);
+    // Check Authorization header first
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
     }
+    // Fallback to cookie if no header
+    else {
+        token = req.cookies.token;
+    }
+
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: "No authentication token found"
+        });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            console.error("JWT Error:", err.message);
+            return res.status(401).json({
+                success: false,
+                message: "Invalid/expired token",
+                error: err.message
+            });
+        }
+
+        req.user = decoded;
+        // Add after req.user = decoded
+        if (req.originalUrl.startsWith("/api/admin") && req.user.role !== "admin") {
+            return res.status(403).json({ message: "Admin access required" });
+        }
+        console.log("Authenticated User:", decoded);
+        next();
+    });
 };
 
 export default authMiddleware;
