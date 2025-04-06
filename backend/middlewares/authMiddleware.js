@@ -1,8 +1,9 @@
+// authMiddleware.js
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
-// authMiddleware.js
+
 const authMiddleware = (req, res, next) => {
     let token;
 
@@ -23,24 +24,27 @@ const authMiddleware = (req, res, next) => {
         });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            console.error("JWT Error:", err.message);
-            return res.status(401).json({
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+
+        // Admin route protection
+        if (req.originalUrl.startsWith("/api/admin") && req.user.role !== "admin") {
+            return res.status(403).json({
                 success: false,
-                message: "Invalid/expired token",
-                error: err.message
+                message: "Admin access required"
             });
         }
 
-        req.user = decoded;
-        // Add after req.user = decoded
-        if (req.originalUrl.startsWith("/api/admin") && req.user.role !== "admin") {
-            return res.status(403).json({ message: "Admin access required" });
-        }
-        console.log("Authenticated User:", decoded);
         next();
-    });
+    } catch (err) {
+        console.error("JWT Error:", err.message);
+        return res.status(401).json({
+            success: false,
+            message: "Invalid/expired token",
+            error: err.message
+        });
+    }
 };
 
 export default authMiddleware;

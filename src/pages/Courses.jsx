@@ -38,7 +38,7 @@ const CourseCard = ({
                       teachingModes,
                       lessons,
                       onEnroll,
-                      isEnrolling
+                      isEnrolling,
                     }) => {
   const [selectedDuration, setSelectedDuration] = useState(durations[0]);
   const [selectedMode, setSelectedMode] = useState(teachingModes[0]);

@@ -4,7 +4,8 @@ const CourseSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true,
-        enum: ["Web Development", "App Development", "Crypto Classes", "UI/UX"]
+        enum: ["Web Development", "App Development", "Crypto Classes", "UI/UX"],
+        index : true
     },
     description: { type: String, required: true },
     instructor: {

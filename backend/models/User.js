@@ -39,9 +39,23 @@ const UserSchema = new mongoose.Schema({
     },
     points: { type: Number, default: 0 }, // Default points to 0
     enrolledCourses: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Course"
+        course: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Course"
+        },
+        enrollmentDate: {
+            type: Date,
+            default: Date.now
+        }
     }],
+    bio: String,
+    notifications: {
+        courseUpdates: { type: Boolean, default: true },
+        assignmentReminders: { type: Boolean, default: true },
+        gradeNotifications: { type: Boolean, default: true },
+        announcements: { type: Boolean, default: true },
+        marketingEmails: { type: Boolean, default: false }
+    }
 });
 
 UserSchema.index({ enrolledCourses: 1 }, { unique: false, sparse: true });

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -8,41 +9,24 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+    const { login } = useAuth();
 
-    const handleLogin = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError('');
 
         try {
-            const response = await axios.post(
-                'http://localhost:2000/api/auth/login',
-                {
-                    email: email.trim().toLowerCase(),
-                    password
-                },
-                {
-                    withCredentials: true,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            if (response.data.success) {
-                // Store token and user data
-                localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-
-                // Set default headers for future requests
-                axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-
-                navigate('/dashboard');
+            const result = await login({ email, password });
+            if (result.success) {
+                const from = location.state?.from?.pathname || '/dashboard';
+                navigate(from, { replace: true });
+            } else {
+                setError(result.message);
             }
         } catch (error) {
-            console.error('Login error:', error);
-            setError(error.response?.data?.message || 'Login failed');
-            // Clear invalid token if exists
-            localStorage.removeItem('token');
+            setError('An unexpected error occurred');
         } finally {
             setLoading(false);
         }
@@ -57,9 +41,13 @@ const Login = () => {
                 <h2 className="text-3xl font-bold text-gray-700">User Login</h2>
                 <p className="text-sm text-gray-500">*Fill in the following info</p>
 
+                {/* Show any redirect messages or errors */}
+                {location.state?.error && (
+                    <p className="text-red-500 mb-4">{location.state.error}</p>
+                )}
                 {error && <p className="text-red-500 mb-4">{error}</p>}
 
-                <form className="mt-4 p-10" onSubmit={handleLogin}>
+                <form className="mt-4 p-10" onSubmit={handleSubmit}>
                     <div className="mb-4">
                         <label className="block text-gray-600">Email</label>
                         <input

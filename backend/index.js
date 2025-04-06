@@ -9,7 +9,8 @@ import User from "./models/User.js";
 import Course from "./models/Courses.js"; // Import Course model
 import PasswordReset from "./models/PasswordReset.js";
 import authRoutes from "./routes/authRoutes.js";
-
+// import settingsRoutes from "./routes/settings.js"
+import settingsRouter from './routes/settings.js';
 // server.js
 import cookieParser from 'cookie-parser';
 import jwt from "jsonwebtoken";
@@ -37,18 +38,34 @@ connectDB(DATABASE_URL);
 app.use(bodyParser.json())
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+// app.use(cookieParser());
 
 // CORS configuration
+// Update your CORS configuration in index.js
 app.use(
     cors({
         origin: "http://localhost:5173",
         credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
         exposedHeaders: ["Set-Cookie"]
     })
 );
+
+// Handle preflight requests
+app.options('*', cors());
+
+// Add cookie parser
+app.use(cookieParser());
+
+// Add this before your routes
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Credentials', true);
+    res.header('Access-Control-Allow-Origin', req.headers.origin);
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -173,18 +190,40 @@ app.get('/api/courses', async (req, res) => {
 
 
 // Get courses for a specific user
+// Get courses for a specific user
+// Get courses for a specific user
+// In your server route (index.js)
+// Wrap your API routes with error handling
+// In your server (index.js)
 app.get('/api/users/:userId/courses', async (req, res) => {
     try {
-        const user = await User.findById(req.params.userId).populate('enrolledCourses');
+        const user = await User.findById(req.params.userId)
+            .populate({
+                path: 'enrolledCourses.course',
+                select: 'title description instructor duration teachingMode price image lessons', // Include all needed fields
+                populate: {
+                    path: 'instructor',
+                    select: 'firstName lastName' // Ensure instructor details are included
+                }
+            });
+
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        res.json(user.enrolledCourses);
+
+        // Filter out invalid or incomplete courses
+        const validCourses = user.enrolledCourses.filter(ec =>
+            ec.course &&
+            ec.course.title &&
+            ec.course._id
+        );
+
+        res.json(validCourses);
     } catch (error) {
+        console.error("Error fetching courses:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 });
-
 // REGISTRATION ENDPOINT (Updated)
 // In index.js
 app.post("/send-email", async (req, res) => {
@@ -250,6 +289,8 @@ app.post("/send-email", async (req, res) => {
                 title: trimmedCourse,
                 duration: trimmedDuration,
                 teachingMode: trimmedMode
+
+
             });
 
             if (!courseToEnroll) {
@@ -262,8 +303,10 @@ app.post("/send-email", async (req, res) => {
                     status: "pending",
                     image: getCourseImage(trimmedCourse),
                     lessons: [],
-                    startDate: new Date() // Explicitly set start date
+                    startDate: new Date(),
+                    studentsEnrolled: [] // Initialize properly
                 });
+
                 await courseToEnroll.save();
             }
         } catch (courseError) {
@@ -449,6 +492,7 @@ app.post("/api/auth/reset-password/:token", async (req, res) => {
 });
 
     // Add this after other course routes
+// In index.js - Modify the existing enrollment route
 app.post('/api/courses/enroll', async (req, res) => {
     try {
         const { courseId } = req.body;
@@ -462,13 +506,12 @@ app.post('/api/courses/enroll', async (req, res) => {
             return res.status(404).json({ success: false, message: "User or course not found" });
         }
 
-        // Convert to ObjectId for proper comparison
         const courseObjectId = new mongoose.Types.ObjectId(courseId);
 
-        // Check for existing enrollment using $in operator
+        // Modified enrollment check
         const isEnrolled = await User.exists({
             _id: user._id,
-            enrolledCourses: { $in: [courseObjectId] }
+            "enrolledCourses.course": courseObjectId // Changed to check nested field
         });
 
         if (isEnrolled) {
@@ -478,12 +521,17 @@ app.post('/api/courses/enroll', async (req, res) => {
             });
         }
 
-        // Add to enrolled courses
+        // Modified enrollment update - Add this block
         await User.findByIdAndUpdate(user._id, {
-            $addToSet: { enrolledCourses: courseObjectId } // Prevent duplicates
+            $addToSet: {
+                enrolledCourses: {
+                    course: courseObjectId,
+                    enrollmentDate: new Date() // Individual start time
+                }
+            }
         });
 
-        // Add user to course's students
+        // Rest of the code remains the same
         await Course.findByIdAndUpdate(courseId, {
             $addToSet: { studentsEnrolled: user._id }
         });
@@ -507,10 +555,17 @@ app.post('/api/courses/enroll', async (req, res) => {
 // Add near other routes in index.js
 // Modify the /api/library route to properly populate course titles
 // Get library resources
+// In index.js - Update the /api/library route
 app.get('/api/library', authMiddleware, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).populate('enrolledCourses');
-        const userCourseTitles = user.enrolledCourses.map(course => course.title);
+        // Correct population path
+        const user = await User.findById(req.user.id)
+            .populate('enrolledCourses.course'); // Populate the nested 'course' field
+
+        // Get titles from the populated course references
+        const userCourseTitles = user.enrolledCourses.map(
+            ec => ec.course?.title // Safely access nested title
+        ).filter(title => title); // Remove any undefined values
 
         const resources = await Library.find({
             category: { $in: userCourseTitles }
@@ -562,6 +617,7 @@ app.get('/api/library/download/:resourceId', authMiddleware, async (req, res) =>
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/settings", settingsRouter);
 // app.use("/api/auth", loginRoute);
 // In your server's login route (server.js)
 

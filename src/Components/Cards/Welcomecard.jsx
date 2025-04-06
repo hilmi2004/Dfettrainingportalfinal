@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Calendar } from "lucide-react";
 import axios from "axios";
-import {Cookies} from "js-cookies";
 
 const WelcomeCard = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                // WelcomeCard.jsx
                 const response = await axios.get(
-                    "http://localhost:2000/api/auth/me", // Updated endpoint
+                    "http://localhost:2000/api/auth/me",
                     {
                         withCredentials: true,
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem('token')}`
+                        },
                         validateStatus: (status) => status < 500
                     }
                 );
@@ -26,8 +26,14 @@ const WelcomeCard = () => {
                     return;
                 }
 
+                if (!response.data.success) {
+                    setError(response.data.message || "Failed to fetch user data");
+                    return;
+                }
+
                 console.log("User data:", response.data);
-                setUser(response.data);
+                // Access the user object from the response data
+                setUser(response.data.user || response.data); // Handle both response structures
             } catch (err) {
                 console.error("Full error:", err.response || err);
                 setError(err.response?.data?.message || "Authentication failed");
@@ -73,7 +79,7 @@ const WelcomeCard = () => {
                 {/* Left Side - Greeting & Date */}
                 <div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-1">
-                        Welcome back, {user ? user.firstName : "User"}!
+                        Welcome back, {user?.firstName || "User"}!
                     </h2>
                     <div className="flex items-center text-gray-500">
                         <Calendar className="h-5 w-5 mr-2" />
