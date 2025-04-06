@@ -15,6 +15,8 @@ import cookieParser from 'cookie-parser';
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import adminRoutes from "./routes/adminRoutes.js";
+import authMiddleware from "./middlewares/authMiddleware.js";
+import {Library} from "./models/Library.js";
 
 // Add after other middleware
 
@@ -259,7 +261,8 @@ app.post("/send-email", async (req, res) => {
                     price: Number(price),
                     status: "pending",
                     image: getCourseImage(trimmedCourse),
-                    lessons: []
+                    lessons: [],
+                    startDate: new Date() // Explicitly set start date
                 });
                 await courseToEnroll.save();
             }
@@ -498,6 +501,59 @@ app.post('/api/courses/enroll', async (req, res) => {
             message: "Enrollment failed",
             error: error.message
         });
+    }
+});
+
+// Add near other routes in index.js
+// Modify the /api/library route to properly populate course titles
+// Get library resources
+app.get('/api/library', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).populate('enrolledCourses');
+        const userCourseTitles = user.enrolledCourses.map(course => course.title);
+
+        const resources = await Library.find({
+            category: { $in: userCourseTitles }
+        });
+
+        res.json(resources);
+    } catch (error) {
+        console.error("Library error:", error);
+        res.status(500).json({ message: "Failed to load library resources" });
+    }
+});
+
+// Download resource
+app.get('/api/library/download/:resourceId', authMiddleware, async (req, res) => {
+    try {
+        const resource = await Library.findById(req.params.resourceId);
+        if (!resource) {
+            return res.status(404).json({ message: "Resource not found" });
+        }
+
+        // Verify user has access to this resource's category
+        const user = await User.findById(req.user.id).populate('enrolledCourses');
+        const hasAccess = user.enrolledCourses.some(course =>
+            course.title === resource.category
+        );
+
+        if (!hasAccess) {
+            return res.status(403).json({ message: "Access denied to this resource" });
+        }
+
+        // Update download count
+        await Library.findByIdAndUpdate(resource._id, {
+            $inc: { downloadCount: 1 }
+        });
+
+        // Return the file URL (in production, you'd serve the file)
+        res.json({
+            fileUrl: resource.fileUrl,
+            message: "Download started"
+        });
+    } catch (error) {
+        console.error("Download error:", error);
+        res.status(500).json({ message: "Download failed" });
     }
 });
 // Add this emergency route to your server

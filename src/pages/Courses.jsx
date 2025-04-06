@@ -86,7 +86,7 @@ const CourseCard = ({
                     <option key={duration} value={duration}>{duration}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-500 pointer-events-none" />
+              {/*<ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-500 pointer-events-none" />*/}
             </div>
 
             <div className="relative flex-1">
@@ -100,7 +100,7 @@ const CourseCard = ({
                     <option key={mode} value={mode}>{mode}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-500 pointer-events-none" />
+              {/*<ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-500 pointer-events-none" />*/}
             </div>
           </div>
 

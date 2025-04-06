@@ -52,29 +52,50 @@ const Index = () => {
     }, [refreshTrigger]);
 
 
-    const transformCourseData = (course) => ({
-        id: course._id,
-        title: course.title,
-        instructor: course.instructor?
-            `Prof. ${course.instructor.firstName} ${course.instructor.lastName}` :
-            "Instructor not assigned",
-        progress: calculateCourseProgress(course),
-        duration: course.duration,
-        lessons: course.lessons?.length || 0,
-        image: course.image || getCourseImage(course.title)
-    });
+    const transformCourseData = (course) => {
+        const now = new Date();
+        const startDate = new Date(course.startDate || course.createdAt);
+        const durationInMonths = parseInt(course.duration.split(' ')[0]);
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + durationInMonths);
+
+        let progress = 0;
+        if (now >= endDate) {
+            progress = 100;
+        } else if (now > startDate) {
+            const totalDuration = endDate - startDate;
+            const elapsedTime = now - startDate;
+            progress = Math.min(100, Math.round((elapsedTime / totalDuration) * 100));
+        }
+
+        return {
+            id: course._id,
+            title: course.title,
+            instructor: course.instructor ?
+                `Prof. ${course.instructor.firstName} ${course.instructor.lastName}` :
+                "Instructor not assigned",
+            progress: progress,
+            duration: course.duration,
+            lessons: course.lessons?.length || 0,
+            image: course.image || getCourseImage(course.title),
+            startDate: course.startDate || course.createdAt,
+            expectedEndDate: endDate
+        };
+    };
 
     const calculateCourseProgress = (course) => {
         if (!course.completedLessons || !course.lessons) return 0;
         const completed = course.completedLessons.length;
         const total = course.lessons.length;
         return Math.round((completed / (total || 1)) * 100); // Prevent division by zero
+
     };
 
     const getCourseImage = (title) => {
         const courseImages = {
             "Web Development": "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHdlYiUyMGRldmVsb3BtZW50fGVufDB8fDB8fHww",
-            // ... keep other image URLs
+            "App Development": "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHdlYiUyMGRldmVsb3BtZW50fGVufDB8fDB8fHww",
+
         };
 
         return courseImages[title] || "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjF8fGJ1c2luZXNzfGVufDB8fDB8fHww";

@@ -71,3 +71,58 @@ CourseSchema.index(
 const Course = mongoose.model("Course", CourseSchema);
 
 export default Course;
+
+
+// models/Courses.js
+// import mongoose from "mongoose";
+//
+// const CourseSchema = new mongoose.Schema({
+//     title: {
+//         type: String,
+//         required: true,
+//         enum: ["Web Development", "App Development", "Crypto Classes", "UI/UX"]
+//     },
+//     description: { type: String, required: true },
+//     instructor: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: "User"
+//     },
+//     studentsEnrolled: [{
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: "User"
+//     }],
+//     durations: {
+//         type: [String],
+//         required: true,
+//         enum: ["3 months", "6 months", "12 months"]
+//     },
+//     teachingModes: {
+//         type: [String],
+//         required: true,
+//         enum: ["Online", "Physical"]
+//     },
+//     basePrice: {
+//         type: Number,
+//         required: true
+//     },
+//     image: {
+//         type: String,
+//         required: true
+//     },
+//     status: {
+//         type: String,
+//         enum: ["active", "archived"],
+//         default: "active"
+//     },
+//     lessons: [{
+//         title: String,
+//         duration: String,
+//         content: String,
+//         resources: [String]
+//     }]
+// });
+//
+// CourseSchema.index({ title: 1 }, { unique: true });
+//
+// const Course = mongoose.model("Course", CourseSchema);
+// export default Course;
