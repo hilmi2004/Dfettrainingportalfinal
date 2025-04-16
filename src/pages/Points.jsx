@@ -1,11 +1,11 @@
 
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
-import PointsDisplay from "@/components/dashboard/PointsDisplay";
-import PointsHistory from "@/components/points/PointsHistory";
-import { getUserPoints, getPointsTransactions } from "@/services/pointsService";
+import { useQuery } from "tanstack/react-query";
+import Navbar from "../components/layout/Navbar";
+import Sidebar from "../components/layout/Sidebar";
+import PointsDisplay from "../components/dashboard/PointsDisplay";
+import PointsHistory from "../components/points/PointsHistory";
+import { getUserPoints, getPointsTransactions } from "../services/pointsService";
 import { toast } from "sonner";
 
 const Points = () => {

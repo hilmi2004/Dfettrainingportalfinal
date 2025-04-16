@@ -1,7 +1,7 @@
 
 import React from "react";
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
+import Navbar from "../components/layout/Navbar";
+import Sidebar from "../components/layout/Sidebar";
 import { Search, Plus, Paperclip, Send, User, Star, Trash, ChevronRight, Mail, MailOpen } from "lucide-react";
 
 const conversations = [

@@ -1,137 +1,167 @@
-
-import React from "react";
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
-import { Mail, BookOpen, Star, Users } from "lucide-react";
-
-const instructors = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    position: "Professor of Computer Science",
-    department: "Computer Science",
-    courses: 12,
-    students: 2450,
-    rating: 4.8,
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmlsZXxlbnwwfHwwfHx8MA%3D%3D",
-  },
-  {
-    id: 2,
-    name: "Prof. Michael Chen",
-    position: "Head of Data Science",
-    department: "Computer Science",
-    courses: 8,
-    students: 1890,
-    rating: 4.7,
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHByb2ZpbGV8ZW58MHx8MHx8fDA%3D",
-  },
-  {
-    id: 3,
-    name: "Dr. Emma Williams",
-    position: "Professor of Business",
-    department: "Business Studies",
-    courses: 10,
-    students: 2100,
-    rating: 4.5,
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHByb2ZpbGV8ZW58MHx8MHx8fDA%3D",
-  },
-  {
-    id: 4,
-    name: "Alex Thompson",
-    position: "Senior Lecturer in Design",
-    department: "Design",
-    courses: 6,
-    students: 1450,
-    rating: 4.9,
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjJ8fHByb2ZpbGV8ZW58MHx8MHx8fDA%3D",
-  },
-  {
-    id: 5,
-    name: "Prof. David Lee",
-    position: "Professor of Mathematics",
-    department: "Mathematics",
-    courses: 9,
-    students: 1700,
-    rating: 4.6,
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjh8fHByb2ZpbGV8ZW58MHx8MHx8fDA%3D",
-  },
-  {
-    id: 6,
-    name: "Maria Rodriguez",
-    position: "Language Instructor",
-    department: "Languages",
-    courses: 7,
-    students: 2300,
-    rating: 4.8,
-    image: "https://images.unsplash.com/photo-1619946794135-5bc917a27793?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzB8fHByb2ZpbGV8ZW58MHx8MHx8fDA%3D", 
-  },
-];
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Mail, BookOpen, Star, Users, Search, Filter } from "lucide-react";
+import { useAuth } from "../context/AuthContext.jsx";
+import Navbar from "../components/layout/Navbar";
+import Sidebar from "../components/layout/Sidebar";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+// import { Badge } from "@/components/ui/badge";
 
 const Instructors = () => {
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="ml-64 flex-1 flex flex-col">
-        <Navbar />
-        
-        <main className="flex-1 p-6 page-transition">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Our Instructors</h1>
-            <p className="text-gray-600">Meet our team of experienced instructors and experts</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {instructors.map((instructor) => (
-              <div key={instructor.id} className="app-card card-hover">
-                <div className="p-6 text-center">
-                  <div className="relative w-24 h-24 mx-auto mb-4">
-                    <img
-                      src={instructor.image}
-                      alt={instructor.name}
-                      className="w-full h-full object-cover rounded-full border-4 border-white shadow-md"
-                    />
-                    <div className="absolute -bottom-1 -right-1 bg-teach-blue-500 text-white p-1 rounded-full">
-                      <Star className="w-4 h-4" />
-                    </div>
-                  </div>
-                  
-                  <h3 className="text-xl font-semibold text-gray-800">{instructor.name}</h3>
-                  <p className="text-teach-blue-600 font-medium text-sm mb-1">{instructor.position}</p>
-                  <p className="text-gray-500 text-sm mb-4">{instructor.department}</p>
-                  
-                  <div className="flex justify-center gap-4 py-3 border-t border-b border-gray-100 mb-4">
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-gray-800">{instructor.courses}</p>
-                      <p className="text-xs text-gray-500">Courses</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-gray-800">{instructor.students.toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">Students</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-gray-800">{instructor.rating}</p>
-                      <p className="text-xs text-gray-500">Rating</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <button className="btn-primary flex-1 flex items-center justify-center">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      Courses
-                    </button>
-                    <button className="btn-secondary flex-1 flex items-center justify-center">
-                      <Mail className="w-4 h-4 mr-2" />
-                      Contact
-                    </button>
-                  </div>
-                </div>
+  const { currentUser } = useAuth();
+  const [instructors, setInstructors] = useState([]);
+  const [filteredInstructors, setFilteredInstructors] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInstructors = async () => {
+      try {
+        const response = await axios.get('/api/instructors');
+        setInstructors(response.data);
+        setFilteredInstructors(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching instructors:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchInstructors();
+  }, []);
+
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = instructors.filter(instructor =>
+          instructor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          instructor.coursesTaught.some(course =>
+              course.title.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+      );
+      setFilteredInstructors(filtered);
+    } else {
+      setFilteredInstructors(instructors);
+    }
+  }, [searchTerm, instructors]);
+
+  const handleContact = (instructorId) => {
+    // Implement contact functionality
+    console.log("Contact instructor:", instructorId);
+  };
+
+  if (loading) {
+    return (
+        <div className="flex min-h-screen bg-gray-50">
+          <Sidebar />
+          <div className="ml-64 flex-1 flex flex-col">
+            <Navbar />
+            <main className="flex-1 p-6 flex items-center justify-center">
+              <div className="text-center">
+                <p>Loading instructors...</p>
               </div>
-            ))}
+            </main>
           </div>
-        </main>
+        </div>
+    );
+  }
+
+  return (
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="ml-64 flex-1 flex flex-col">
+          <Navbar />
+          <main className="flex-1 p-6 page-transition">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Our Instructors</h1>
+              <p className="text-gray-600">Meet our team of experienced instructors and experts</p>
+
+              <div className="mt-4 flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                      placeholder="Search instructors or courses..."
+                      className="pl-10"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button variant="outline">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filters
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredInstructors.length > 0 ? (
+                  filteredInstructors.map((instructor) => (
+                      <div key={instructor._id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="p-6 text-center">
+                          <div className="relative w-24 h-24 mx-auto mb-4">
+                            <img
+                                src={instructor.profileImage || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8cHJvZmlsZXxlbnwwfHwwfHx8MA%3D%3D"}
+                                alt={instructor.fullName}
+                                className="w-full h-full object-cover rounded-full border-4 border-white shadow-md"
+                            />
+                            <Badge className="absolute -bottom-1 -right-1 bg-blue-600 text-white px-2 py-1 rounded-full">
+                              <Star className="w-3 h-3 mr-1" />
+                              {instructor.rating?.toFixed(1) || "4.8"}
+                            </Badge>
+                          </div>
+
+                          <h3 className="text-xl font-semibold text-gray-800">{instructor.fullName}</h3>
+                          <p className="text-blue-600 font-medium text-sm mb-1">
+                            {instructor.coursesTaught.length > 0
+                                ? instructor.coursesTaught[0].title
+                                : "Instructor"}
+                          </p>
+
+                          <div className="flex justify-center gap-2 my-3 flex-wrap">
+                            {instructor.coursesTaught.slice(0, 3).map(course => (
+                                <Badge
+                                    key={course._id}
+                                    variant="secondary"
+                                    className="text-xs"
+                                >
+                                  {course.title}
+                                </Badge>
+                            ))}
+                            {instructor.coursesTaught.length > 3 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{instructor.coursesTaught.length - 3} more
+                                </Badge>
+                            )}
+                          </div>
+
+                          <div className="mt-4 flex gap-3">
+                            <Button
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => handleContact(instructor._id)}
+                            >
+                              <Mail className="w-4 h-4 mr-2" />
+                              Contact
+                            </Button>
+                            {currentUser?.role === 'student' && (
+                                <Button className="flex-1">
+                                  <BookOpen className="w-4 h-4 mr-2" />
+                                  Enroll
+                                </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                  ))
+              ) : (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-gray-500">No instructors found matching your search</p>
+                  </div>
+              )}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
   );
 };
 

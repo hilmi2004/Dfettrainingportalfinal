@@ -10,9 +10,9 @@ import {
     Settings,
     GraduationCap,
     Coins,
-    Shield
+    Shield, HandshakeIcon
 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const Sidebar = () => {
     const location = useLocation();
@@ -48,10 +48,20 @@ const Sidebar = () => {
         adminOnly: true
     };
 
+    const instructorNavItem = {
+        name : "Instructor",
+        icon : <HandshakeIcon/>,
+        path : "/instructor-dashboard",
+        instructorOnly : true
+
+    }
+
     // Combine nav items and conditionally add admin item
     const navItems = [
         ...baseNavItems,
-        ...(currentUser?.role === 'admin' ? [adminNavItem] : [])
+        ...(currentUser?.role === 'admin' ? [adminNavItem] : []),
+        ...(currentUser?.role === 'instructor' ? [instructorNavItem]:[])
+
     ];
 
     return (

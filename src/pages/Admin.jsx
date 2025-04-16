@@ -1,14 +1,15 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AdminCourses } from "@/components/admin/AdminCourses";
-import { AdminLibrary } from "@/components/admin/AdminLibrary";
-import { AdminUsers } from "@/components/admin/AdminUsers";
+import { useAuth } from "../context/AuthContext.jsx";
+import Navbar from "../components/layout/Navbar";
+import Sidebar from "../components/layout/Sidebar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
+import { AdminCourses } from "../components/admin/AdminCourses";
+import { AdminLibrary } from "../components/admin/AdminLibrary";
+import { AdminUsers } from "../components/admin/AdminUsers";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import {AdminAnnouncements} from "../Components/admin/AdminAnnouncements.jsx";
 
 const Admin = () => {
   const { currentUser } = useAuth();
@@ -46,6 +47,10 @@ const Admin = () => {
                 <TabsTrigger value="courses">Courses</TabsTrigger>
                 <TabsTrigger value="library">Library</TabsTrigger>
                 <TabsTrigger value="users">Users</TabsTrigger>
+                <TabsTrigger value="announcements">Announcement</TabsTrigger>
+
+
+
               </TabsList>
 
               <TabsContent value="courses" className="mt-0">
@@ -59,6 +64,12 @@ const Admin = () => {
               <TabsContent value="users" className="mt-0">
                 <AdminUsers />
               </TabsContent>
+
+              <TabsContent value="announcements" className="mt-0">
+                <AdminAnnouncements/>
+              </TabsContent>
+
+
             </Tabs>
           </main>
 

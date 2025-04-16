@@ -12,6 +12,8 @@ const Astudent = () => {
                             src="src/image/aiony-haust-3TLl_97HNJo-unsplash.jpg"
                             alt="Student Learning"
                         />
+
+                        {/*<video className="w-full h-full object-cover" src="src/image/dfetstudentsvideo.mp4"></video>*/}
                     </div>
 
                     {/* Content Section */}

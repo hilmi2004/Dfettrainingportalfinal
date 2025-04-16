@@ -1,50 +1,43 @@
-// authMiddleware.js
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
+import jwt from 'jsonwebtoken';
+import {cookieOptions} from "../config/cookies.js";
 
-dotenv.config();
-
-const authMiddleware = (req, res, next) => {
-    let token;
-
-    // Check Authorization header first
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.split(' ')[1];
-    }
-    // Fallback to cookie if no header
-    else {
-        token = req.cookies.token;
-    }
-
-    if (!token) {
-        return res.status(401).json({
-            success: false,
-            message: "No authentication token found"
-        });
-    }
-
+export const authMiddleware = (req, res, next) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
+        // Get token from cookies first
+        const token = req.cookies.accessToken ||
+            req.headers.authorization?.split(' ')[1];
 
-        // Admin route protection
-        if (req.originalUrl.startsWith("/api/admin") && req.user.role !== "admin") {
-            return res.status(403).json({
+        if (!token) {
+            return res.status(401).json({
                 success: false,
-                message: "Admin access required"
+                message: "Authorization required"
             });
         }
 
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Attach user to request
+        req.user = {
+            id: decoded.id,
+            email: decoded.email,
+            role: decoded.role
+        };
+
         next();
-    } catch (err) {
-        console.error("JWT Error:", err.message);
+    } catch (error) {
+        console.error('Auth Error:', error.message);
+
+        // Clear invalid cookies
+        // Replace res.clearCookies() with:
+        res.clearCookie('accessToken', cookieOptions)
+            .clearCookie('refreshToken', cookieOptions);
+
         return res.status(401).json({
             success: false,
-            message: "Invalid/expired token",
-            error: err.message
+            message: error.name === 'TokenExpiredError'
+                ? "Session expired"
+                : "Invalid authentication"
         });
     }
 };
-
-export default authMiddleware;

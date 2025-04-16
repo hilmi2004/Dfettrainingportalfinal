@@ -7,17 +7,24 @@ import {
   TableHead,
   TableRow,
   TableCell
-} from "@/components/ui/table";
+} from "../../Components/ui/table";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "../../components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -25,14 +32,15 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter
-} from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+} from "../../components/ui/dialog";
+import { Plus, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "react-toastify";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 export const AdminCourses = () => {
   const { currentUser } = useAuth();
   const [courses, setCourses] = useState([]);
+  const [instructors, setInstructors] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentCourse, setCurrentCourse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,61 +52,111 @@ export const AdminCourses = () => {
     duration: "3 months",
     teachingMode: "Online",
     price: 0,
-    status: "pending"
+    status: "pending",
+    image: "",
+    imageFile: null
   });
+  const [isUploading, setIsUploading] = useState(false);
 
-  // Fetch courses from API
   const fetchCourses = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Ensure we have a valid token
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+
+      const response = await axios.get('/api/admin/courses', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        params: {
+          populate: 'instructor'
+        }
+      });
+
+      setCourses(response.data);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      setError(error.response?.data?.message || error.message);
+      toast.error(error.response?.data?.message || "Failed to fetch courses");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchInstructors = async () => {
+    try {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
 
-      const response = await axios.get('/api/admin/courses', {
+      const response = await axios.get('/api/instructors', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      // Handle different response formats
-      let coursesData = [];
-      if (Array.isArray(response.data)) {
-        coursesData = response.data;
-      } else if (response.data && Array.isArray(response.data.courses)) {
-        coursesData = response.data.courses;
-      } else if (response.data && typeof response.data === 'object') {
-        coursesData = [response.data];
-      } else {
-        throw new Error("Unexpected data format received from server");
-      }
-
-      setCourses(coursesData);
+      setInstructors(response.data);
     } catch (error) {
-      console.error("Error fetching courses:", error);
-      setError(error.response?.data?.message || error.message);
-      toast.error(error.response?.data?.message || "Failed to fetch courses");
+      console.error("Detailed error:", {
+        message: error.message,
+        response: error.response?.data,
+        stack: error.stack
+      });
 
-      // If unauthorized, redirect to login
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        toast.error("You don't have permission to access this resource");
-      }
-    } finally {
-      setIsLoading(false);
+      toast.error(
+          error.response?.data?.message ||
+          "Failed to load instructors. Check console for details."
+      );
     }
   };
 
-  // Handle course creation/update
+  const uploadImage = async (file) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axios.post('/api/upload/image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      return response.data.url || response.data.imageUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image');
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const saveCourse = async (courseData) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
+      if (!token) throw new Error('No authentication token found');
+
+      const payload = {
+        title: courseData.title,
+        description: courseData.description,
+        instructor: courseData.instructor || null,
+        duration: courseData.duration,
+        teachingMode: courseData.teachingMode,
+        price: Number(courseData.price),
+        status: courseData.status,
+        image: courseData.image
+      };
+
+      if (courseData.imageFile) {
+        const imageUrl = await uploadImage(courseData.imageFile);
+        payload.image = imageUrl;
       }
 
       const config = {
@@ -108,30 +166,34 @@ export const AdminCourses = () => {
         }
       };
 
+      let response;
       if (currentCourse?._id) {
-        await axios.put(`/api/admin/courses/${currentCourse._id}`, courseData, config);
-        toast.success("Course updated successfully");
+        response = await axios.put(
+            `/api/admin/courses/${currentCourse._id}`,
+            payload,
+            config
+        );
       } else {
-        await axios.post('/api/admin/courses', courseData, config);
-        toast.success("Course created successfully");
+        response = await axios.post('/api/admin/courses', payload, config);
       }
 
+      toast.success(currentCourse ? "Course updated successfully" : "Course created successfully");
       fetchCourses();
       return true;
     } catch (error) {
       console.error("Error saving course:", error);
-      toast.error(error.response?.data?.message || "Error saving course");
+      toast.error(
+          error.response?.data?.message ||
+          "Error saving course. Check console for details."
+      );
       return false;
     }
   };
 
-  // Handle course deletion
   const deleteCourse = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+      if (!token) throw new Error('No authentication token found');
 
       await axios.delete(`/api/admin/courses/${id}`, {
         headers: {
@@ -153,11 +215,13 @@ export const AdminCourses = () => {
       setFormData({
         title: course.title,
         description: course.description || "",
-        instructor: course.instructor || "",
+        instructor: course.instructor?._id || "",
         duration: course.duration,
         teachingMode: course.teachingMode,
         price: course.price,
-        status: course.status
+        status: course.status,
+        image: course.image || "",
+        imageFile: null
       });
       setCurrentCourse(course);
     } else {
@@ -168,7 +232,9 @@ export const AdminCourses = () => {
         duration: "3 months",
         teachingMode: "Online",
         price: 0,
-        status: "pending"
+        status: "pending",
+        image: "",
+        imageFile: null
       });
       setCurrentCourse(null);
     }
@@ -187,6 +253,22 @@ export const AdminCourses = () => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setFormData(prev => ({
+        ...prev,
+        imageFile: file,
+        image: URL.createObjectURL(file)
+      }));
+    } catch (error) {
+      console.error("Error handling image:", error);
+      toast.error("Failed to process image");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const success = await saveCourse(formData);
@@ -198,8 +280,17 @@ export const AdminCourses = () => {
   useEffect(() => {
     if (currentUser?.role === 'admin') {
       fetchCourses();
+      fetchInstructors();
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    return () => {
+      if (formData.image?.startsWith('blob:')) {
+        URL.revokeObjectURL(formData.image);
+      }
+    };
+  }, [formData.image]);
 
   if (isLoading) {
     return (
@@ -245,6 +336,7 @@ export const AdminCourses = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Image</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Instructor</TableHead>
                   <TableHead>Duration</TableHead>
@@ -258,8 +350,25 @@ export const AdminCourses = () => {
                 {Array.isArray(courses) && courses.length > 0 ? (
                     courses.map((course) => (
                         <TableRow key={course._id}>
+                          <TableCell>
+                            {course.image ? (
+                                <img
+                                    src={course.image}
+                                    alt={course.title}
+                                    className="w-12 h-12 object-cover rounded-md"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+                                  <ImageIcon className="h-5 w-5 text-gray-400" />
+                                </div>
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">{course.title}</TableCell>
-                          <TableCell>{course.instructor || "Not assigned"}</TableCell>
+                          <TableCell>
+                            {course.instructor
+                                ? `${course.instructor.firstName} ${course.instructor.lastName}`
+                                : "Not assigned"}
+                          </TableCell>
                           <TableCell>{course.duration}</TableCell>
                           <TableCell>{course.teachingMode}</TableCell>
                           <TableCell>${course.price}</TableCell>
@@ -294,7 +403,7 @@ export const AdminCourses = () => {
                     ))
                 ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                         {error ? `Error: ${error}` : "No courses found. Create your first course."}
                       </TableCell>
                     </TableRow>
@@ -314,6 +423,44 @@ export const AdminCourses = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="image" className="text-right">Image</Label>
+                  <div className="col-span-3">
+                    <input
+                        id="image"
+                        name="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                    />
+                    <label htmlFor="image" className="cursor-pointer">
+                      {formData.image ? (
+                          <div className="relative group">
+                            <img
+                                src={formData.image}
+                                alt="Course preview"
+                                className="w-full h-32 object-cover rounded-md"
+                            />
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-white">Change Image</span>
+                            </div>
+                          </div>
+                      ) : (
+                          <div className="border-2 border-dashed border-gray-300 rounded-md p-4 flex flex-col items-center justify-center h-32">
+                            <ImageIcon className="h-8 w-8 text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-500">
+                          Click to upload an image
+                        </span>
+                          </div>
+                      )}
+                    </label>
+                    {isUploading && (
+                        <div className="mt-2 text-sm text-gray-500">Uploading image...</div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="title" className="text-right">Title</Label>
                   <Input
@@ -336,14 +483,38 @@ export const AdminCourses = () => {
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="instructor" className="text-right">Instructor</Label>
-                  <Input
-                      id="instructor"
-                      name="instructor"
-                      value={formData.instructor}
-                      onChange={handleInputChange}
-                      className="col-span-3"
-                  />
+                  <Label htmlFor="instructor" className="text-right">
+                    Instructor
+                  </Label>
+                  <div className="col-span-3">
+                    <Select
+                        name="instructor"
+                        value={formData.instructor || "unassigned"} // Fallback value
+                        onValueChange={(value) =>
+                            setFormData({
+                              ...formData,
+                              instructor: value === "unassigned" ? "" : value
+                            })
+                        }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select instructor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Use a special value for "Not assigned" */}
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {instructors.map((instructor) => (
+                            <SelectItem
+                                key={instructor._id}
+                                value={instructor._id}
+                            >
+                              {instructor.fullName}
+                              {instructor.email && ` (${instructor.email})`}
+                            </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="duration" className="text-right">Duration</Label>
@@ -407,7 +578,11 @@ export const AdminCourses = () => {
                 <Button variant="outline" type="button" onClick={handleCloseDialog}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-teach-blue-500 hover:bg-teach-blue-600">
+                <Button
+                    type="submit"
+                    className="bg-teach-blue-500 hover:bg-teach-blue-600"
+                    disabled={isUploading}
+                >
                   {currentCourse ? "Update" : "Create"}
                 </Button>
               </DialogFooter>

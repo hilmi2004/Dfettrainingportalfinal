@@ -16,14 +16,30 @@ import cookieParser from 'cookie-parser';
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import adminRoutes from "./routes/adminRoutes.js";
-import authMiddleware from "./middlewares/authMiddleware.js";
+import {authMiddleware} from "./middlewares/authMiddleware.js";
 import {Library} from "./models/Library.js";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import Announcement from "./models/Announcements.js";
+import instructorRoutes from "./routes/instructorRoutes.js";
+import {cookieOptions} from "./config/cookies.js";
+
+// Add after other route imports
+
 
 // Add after other middleware
 
 dotenv.config();
 
+
+
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("JWT_SECRET:", process.env.JWT_SECRET); // (avoid logging sensitive info in production)
+
 const app = express();
+app.use(express.json());
+app.use(cookieParser());
 const port = process.env.PORT || 2000;
 const DATABASE_URL = process.env.DATABASE_URL || "mongodb://127.0.0.1:27017/dfetusers";
 
@@ -35,128 +51,53 @@ connectDB(DATABASE_URL);
 // Replace existing CORS middleware
 // Replace existing CORS middleware with:
 
-app.use(bodyParser.json())
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-// app.use(cookieParser());
+app.use(bodyParser.json());
+// app.use(express.urlencoded({ extended: true }));
 
-// CORS configuration
-// Update your CORS configuration in index.js
-app.use(
-    cors({
-        origin: "http://localhost:5173",
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-        exposedHeaders: ["Set-Cookie"]
-    })
-);
+// Update CORS middleware
+app.use(cors({
+    origin: process.env.NODE_ENV === 'development'
+        ? 'http://localhost:5173'
+        : 'https://yourdomain.com',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-// Handle preflight requests
-app.options('*', cors());
+// Handle OPTIONS requests
+// app.options('*', cors());
 
-// Add cookie parser
-app.use(cookieParser());
+// Cookie configuration middleware
+// app.use((req, res, next) => {
+//     res.header('Access-Control-Allow-Credentials', 'true');
+//     next();
+// });
 
-// Add this before your routes
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Credentials', true);
-    res.header('Access-Control-Allow-Origin', req.headers.origin);
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    console.log('Incoming cookies:', req.cookies);
+    console.log('Incoming headers:', req.headers);
     next();
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+    if (process.env.NODE_ENV === 'production') {
+        res.setHeader('Content-Security-Policy', "default-src 'self'");
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+    }
+    next();
+});
 
 
-// Handle preflight requests properly
+// i need it to find a way to ifix all the errors by enabling a more secure way to check that the refresh token logic is working well and also i have to do all of this before maybe 8pm today and start working on the logic for something else maybe the payment system
 
 
-// Handle preflight requests
 
-// Your login route
-// app.post('/api/auth/login', async (req, res) => {
-//     try {
-//         const { email, password } = req.body;
-//
-//         // Validation
-//         if (!email || !password) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Email and password are required"
-//             });
-//         }
-//
-//         // Find user with case-insensitive email
-//         const user = await User.findOne({
-//             email: email.toLowerCase().trim()
-//         });
-//
-//         if (!user) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: "Invalid credentials"
-//             });
-//         }
-//
-//         // Password verification with debug logging
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         console.log('Password Comparison:', {
-//             input: password,
-//             storedHash: user.password,
-//             match: isMatch
-//         });
-//
-//         if (!isMatch) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: "Invalid credentials"
-//             });
-//         }
-//
-//         // JWT Token Generation
-//         const token = jwt.sign(
-//             {
-//                 userId: user._id,
-//                 email: user.email,
-//                 role: user.role
-//             },
-//             process.env.JWT_SECRET,
-//             { expiresIn: '1h' }
-//         );
-//
-//         // Secure Cookie Settings
-//         res.cookie('token', token, {
-//             httpOnly: true,
-//             secure: process.env.NODE_ENV === 'production',
-//             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-//             maxAge: 3600000,
-//             domain: 'localhost',
-//             path: '/'
-//         });
-//
-//         // Successful Response
-//         return res.status(200).json({
-//             success: true,
-//             user: {
-//                 id: user._id,
-//                 email: user.email,
-//                 firstName: user.firstName,
-//                 lastName: user.lastName,
-//                 role: user.role
-//             }
-//         });
-//
-//     } catch (error) {
-//         console.error('Login Error:', error);
-//         return res.status(500).json({
-//             success: false,
-//             message: "Authentication failed"
-//         });
-//     }
-// });
+
+
+
+
+
+
 
 
 // Email Transporter
@@ -185,6 +126,13 @@ app.get('/api/courses', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
+});
+
+app.use((req, res, next) => {
+    if (process.env.NODE_ENV === 'production') {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    next();
 });
 
 
@@ -332,7 +280,8 @@ app.post("/send-email", async (req, res) => {
             username,
             password: tempPassword,
             role: "student",
-            enrolledCourses: [courseToEnroll._id]
+            enrolledCourses: [{ course: courseToEnroll._id }],
+            profileImage: "" // Let the model use default value
         });
 
         await newUser.save();
@@ -579,18 +528,23 @@ app.get('/api/library', authMiddleware, async (req, res) => {
 });
 
 // Download resource
+// In your index.js file
 app.get('/api/library/download/:resourceId', authMiddleware, async (req, res) => {
     try {
         const resource = await Library.findById(req.params.resourceId);
+
         if (!resource) {
             return res.status(404).json({ message: "Resource not found" });
         }
 
         // Verify user has access to this resource's category
-        const user = await User.findById(req.user.id).populate('enrolledCourses');
-        const hasAccess = user.enrolledCourses.some(course =>
-            course.title === resource.category
-        );
+        const user = await User.findById(req.user.id).populate('enrolledCourses.course');
+
+        // Check if user is admin or enrolled in a course with matching category
+        const hasAccess = req.user.role === 'admin' ||
+            user.enrolledCourses.some(ec =>
+                ec.course && ec.course.title === resource.category
+            );
 
         if (!hasAccess) {
             return res.status(403).json({ message: "Access denied to this resource" });
@@ -601,7 +555,7 @@ app.get('/api/library/download/:resourceId', authMiddleware, async (req, res) =>
             $inc: { downloadCount: 1 }
         });
 
-        // Return the file URL (in production, you'd serve the file)
+        // Return the file URL (or serve the file directly)
         res.json({
             fileUrl: resource.fileUrl,
             message: "Download started"
@@ -611,6 +565,112 @@ app.get('/api/library/download/:resourceId', authMiddleware, async (req, res) =>
         res.status(500).json({ message: "Download failed" });
     }
 });
+// Configure storage for uploaded files
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = 'public/uploads';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+});
+
+// Resource file upload endpoint
+app.post('/api/upload/resource', authMiddleware, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+
+        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+        res.json({
+            success: true,
+            fileUrl,
+            message: 'File uploaded successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to upload file',
+            error: error.message
+        });
+    }
+});
+
+// Image upload endpoint
+app.post('/api/upload/image', authMiddleware, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No image uploaded' });
+        }
+
+        const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+        res.json({
+            success: true,
+            imageUrl,
+            message: 'Image uploaded successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to upload image',
+            error: error.message
+        });
+    }
+});
+
+app.post('/clear-cookies', (req, res) => {
+    res
+        .clearCookie('accessToken', cookieOptions)
+        .clearCookie('refreshToken', cookieOptions)
+        .send('Cookies cleared');
+});
+
+
+// Add this near your other routes
+app.get('/api/announcements', authMiddleware, async (req, res) => {
+    try {
+        const announcements = await Announcement.find()
+            .populate('author', 'firstName lastName')
+            .sort({ createdAt: -1 })
+            .limit(5); // Only get recent announcements
+
+        res.json(announcements);
+    } catch (error) {
+        console.error("Error fetching announcements:", error);
+        res.status(500).json({
+            message: "Error fetching announcements",
+            error: error.message
+        });
+    }
+});
+
+// Add to index.js
+app.get('/api/instructors', async (req, res) => {
+    try {
+        const instructors = await User.find({ role: 'instructor' })
+            .populate('coursesTaught', 'title description')
+            .select('fullName email profileImage coursesTaught');
+
+        res.json(instructors);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching instructors", error: error.message });
+    }
+});
+
+
 // Add this emergency route to your server
 
 
@@ -618,6 +678,10 @@ app.get('/api/library/download/:resourceId', authMiddleware, async (req, res) =>
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/settings", settingsRouter);
+app.use("/api/instructor", instructorRoutes);
+app.use('/uploads', express.static('public/uploads'));
+
+
 // app.use("/api/auth", loginRoute);
 // In your server's login route (server.js)
 

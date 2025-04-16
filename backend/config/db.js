@@ -1,12 +1,19 @@
 import mongoose from "mongoose";
 
-const connectDB = async  (DATABASE_URL) =>{
-    try{
-        await mongoose.connect(DATABASE_URL);
-        console.log("MongoDB connected successfully!! You got this");
-    }catch (error){
-        console.log(error);
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.DATABASE_URL, {
+            serverSelectionTimeoutMS: 5000,
+            maxPoolSize: 10
+        });
+        console.log('✅ MongoDB Connected');
+    } catch (err) {
+        console.error('❌ MongoDB Connection Error:', err);
+        setTimeout(connectDB, 5000);
     }
-}
+};
+
+console.log("This is my database url:",process.env.DATABASE_URL);
+
 
 export default connectDB;

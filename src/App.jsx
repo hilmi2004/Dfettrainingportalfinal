@@ -1,10 +1,10 @@
-import React from 'react';
+// import React, {useEffect} from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from "framer-motion";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { AuthProvider, useAuth } from './context/AuthContext';
-
+import {AuthProvider} from './context/AuthContext.jsx';
+import { useAuth } from './context/AuthContext.jsx';
 // Components
 import Landingpage from "./Components/Landingpage";
 import Footer from "./Components/Footer";
@@ -24,6 +24,7 @@ import Grades from "./pages/Grades";
 import NotFound from "./pages/NotFound";
 import Inbox from "./pages/Inbox";
 import Admin from "./pages/Admin";
+import InstructorDashboard from "./pages/InstructorDashboard";
 
 // Animation Config
 const sectionVariants = {
@@ -44,9 +45,14 @@ const AppWrapper = () => {
 };
 
 const App = () => {
-    const { currentUser, isLoading, isAdmin } = useAuth();
 
-    const ProtectedRoute = ({ children, adminOnly = false }) => {
+
+
+
+
+    const { currentUser, isLoading, isAdmin  } = useAuth();
+
+    const ProtectedRoute = ({ children, adminOnly = false, instructorOnly = false }) => {
         if (isLoading) {
             return <div className="flex justify-center items-center h-screen">Loading...</div>;
         }
@@ -56,6 +62,10 @@ const App = () => {
         }
 
         if (adminOnly && !isAdmin) {
+            return <Navigate to="/dashboard" replace />;
+        }
+
+        if (instructorOnly && currentUser.role !== 'instructor') {
             return <Navigate to="/dashboard" replace />;
         }
 
@@ -173,6 +183,13 @@ const App = () => {
                 <Route path="/points" element={
                     <ProtectedRoute>
                         <Grades />
+                    </ProtectedRoute>
+                } />
+
+                {/* Instructor Only Route */}
+                <Route path="/instructor-dashboard" element={
+                    <ProtectedRoute instructorOnly>
+                        <InstructorDashboard />
                     </ProtectedRoute>
                 } />
 

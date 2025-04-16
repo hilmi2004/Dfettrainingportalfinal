@@ -10,16 +10,11 @@ const WelcomeCard = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await axios.get(
-                    "http://localhost:2000/api/auth/me",
-                    {
-                        withCredentials: true,
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
-                        },
-                        validateStatus: (status) => status < 500
-                    }
-                );
+                // Replace axios call with:
+                // Fix the me endpoint call
+                const response = await axios.get("/api/auth/me", {
+                    withCredentials: true // Remove manual Authorization header
+                });
 
                 if (response.status === 401) {
                     setError("Session expired - Please login again");

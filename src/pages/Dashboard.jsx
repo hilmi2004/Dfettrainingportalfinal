@@ -1,41 +1,46 @@
 import React, { useEffect, useState } from "react";
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
-import Welcomecard from "@/Components/Cards/Welcomecard.jsx";
-import CourseCard from "@/components/Cards/CourseCard";
-import AnnouncementCard from "@/components/Cards/AnnouncementCard";
+import Navbar from "../components/layout/Navbar";
+import Sidebar from "../components/layout/Sidebar";
+import Welcomecard from "../Components/Cards/Welcomecard.jsx";
+import CourseCard from "../components/Cards/CourseCard";
+import AnnouncementCard from "../components/Cards/AnnouncementCard";
+import PointsDisplay from "../components/Cards/PointsDisplay.jsx";
+
+
 import { CalendarDays, GraduationCap, BarChart3, CheckCircle } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-
-const announcements = [
-    {
-        id: 1,
-        title: "New Learning Platform Update",
-        content: "We've updated our learning platform with new features to enhance your experience.",
-        date: "2023-05-15",
-        important: true
-    },
-    {
-        id: 2,
-        title: "Upcoming Web Development Workshop",
-        content: "Join our free workshop on advanced React techniques next Friday.",
-        date: "2023-05-10",
-        important: false
-    },
-    {
-        id: 3,
-        title: "Maintenance Scheduled",
-        content: "The platform will be unavailable this Sunday from 2-4 AM for maintenance.",
-        date: "2023-05-05",
-        important: false
-    }
-];
 
 const Dashboard = () => {
     const [enrolledCourses, setEnrolledCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshTrigger, setRefreshTrigger] = useState(false);
+
+    const [announcements, setAnnouncements] = useState([]);
+    const [announcementsLoading, setAnnouncementsLoading] = useState(true);
+
+// Add this useEffect hook
+    useEffect(() => {
+        const fetchAnnouncements = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) return;
+
+                const response = await axios.get("http://localhost:2000/api/announcements", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                setAnnouncements(response.data);
+            } catch (error) {
+                console.error("Error fetching announcements:", error);
+                toast.error("Failed to load announcements");
+            } finally {
+                setAnnouncementsLoading(false);
+            }
+        };
+
+        fetchAnnouncements();
+    }, []);
 
     useEffect(() => {
         const fetchEnrolledCourses = async () => {
@@ -47,7 +52,7 @@ const Dashboard = () => {
                 }
 
                 const userResponse = await axios.get("http://localhost:2000/api/auth/me", {
-                    headers: { Authorization: `Bearer ${token}` }
+                    withCredentials : true
                 }).catch(err => {
                     if (err.response?.status === 401) {
                         localStorage.removeItem("token");
@@ -183,19 +188,32 @@ const Dashboard = () => {
                             </div>
 
                             {/* Announcements Section */}
+                            {/* Announcements Section */}
                             <div>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Announcements</h2>
-                                <div className="space-y-4">
-                                    {announcements.map((announcement) => (
-                                        <AnnouncementCard
-                                            key={announcement.id}
-                                            title={announcement.title}
-                                            content={announcement.content}
-                                            date={announcement.date}
-                                            important={announcement.important}
-                                        />
-                                    ))}
-                                </div>
+                                {announcementsLoading ? (
+                                    <div className="space-y-4">
+                                        {[1, 2, 3].map((i) => (
+                                            <div key={i} className="h-24 bg-gray-200 rounded-lg animate-pulse"></div>
+                                        ))}
+                                    </div>
+                                ) : announcements.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {announcements.map((announcement) => (
+                                            <AnnouncementCard
+                                                key={announcement._id}
+                                                title={announcement.title}
+                                                content={announcement.content}
+                                                date={new Date(announcement.createdAt).toLocaleDateString()}
+                                                important={announcement.important || false}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="app-card p-6 text-center">
+                                        <p className="text-gray-500">No announcements available</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -257,18 +275,7 @@ const Dashboard = () => {
 
                             {/* Quick Actions */}
                             <div className="app-card p-6">
-                                <h3 className="font-semibold text-lg mb-4">Quick Actions</h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button className="btn-secondary py-2 text-sm">
-                                        Submit Assignment
-                                    </button>
-                                    <button className="btn-secondary py-2 text-sm">
-                                        Request Support
-                                    </button>
-                                    <button className="btn-secondary py-2 text-sm">
-                                        View Certificates
-                                    </button>
-                                </div>
+                                <PointsDisplay/>
                             </div>
                         </div>
                     </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { FaCheck, FaStop } from "react-icons/fa";
+import {FaCheck, FaStop, FaTimes} from "react-icons/fa";
+import {useNavigate} from "react-router-dom";
 
 const RegistrationPage = () => {
     const [firstName, setFirstName] = useState("");
@@ -14,6 +15,7 @@ const RegistrationPage = () => {
     const [errors, setErrors] = useState({});
     const [validated, setValidated] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // const [Screenopaque, setScreenopaque] = useState(false);
 
     // In Registrationpage.jsx
     const coursePrices = {
@@ -150,28 +152,44 @@ const RegistrationPage = () => {
     };
 
     return (
-        <div className="flex items-center justify-center bg-white py-9">
+        <div className={`flex items-center justify-center bg-white py-9 ${validated ? "opacity-70" : ""}`}>
             <div className="bg-[#f3f9ff] p-8 rounded-lg shadow-md w-full max-w-lg relative">
                 <h2 className="text-2xl font-bold text-center mb-6">Course Registration</h2>
 
                 <form className="grid grid-cols-2 gap-4" onSubmit={handleSubmit}>
                     {validated && (
-                        <div className="bg-white inset-1 p-10 rounded-lg shadow-lg items-center justify-center flex flex-col absolute top-1/2 lg:w-125 text-center z-30 border border-gray-200">
-                            <FaCheck className="bg-green-600 text-white rounded-full p-4" size="30" />
-                            <FaStop
-                                className="absolute top-0 right-0 cursor-pointer"
-                                size="20"
-                                onClick={() => setValidated(false)}
-                            />
-                            <h1 className="text-4xl font-bold text-green-600 tracking-wide leading-normal">
-                                Successfully Registered
-                            </h1>
-                            <p className="text-xl font-semibold text-black">
-                                Thank You for registering for our course.
-                            </p>
-                        </div>
-                    )}
+                        <>
+                            {/* Opaque overlay */}
+                            <div className="fixed inset-0 bg-black opacity-30 z-20"></div>
 
+                            {/* Success card */}
+                            <div className="fixed inset-0 flex items-center justify-center z-30">
+                                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center border border-gray-200">
+                                    <div className="flex justify-between items-center mb-4">
+
+                                        <button
+                                            onClick={() => setValidated(false)}
+                                            className="text-gray-500 hover:text-gray-700"
+                                        >
+                                            <FaTimes size={20} />
+                                        </button>
+                                    </div>
+
+                                    <div className="my-6">
+                                        <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <FaCheck className="text-blue-600 text-3xl" />
+                                        </div>
+                                        <h1 className="text-2xl font-bold text-blue-800 mb-2">
+                                            Registration completed successfully
+                                        </h1>
+                                        <p className="text-gray-600 mb-6">
+                                            Please check your registered email for verification
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
                     <div className="col-span-2 md:col-span-1">
                         <label className="block font-medium">First Name</label>
                         <input
