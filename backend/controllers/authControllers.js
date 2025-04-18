@@ -103,30 +103,26 @@ export const refreshToken = async (req, res) => {
         const oldRefreshToken = req.cookies.refreshToken;
 
         if (!oldRefreshToken) {
-            return res.status(401).json({ success: false });
+            return res.status(401).json({ success: false, message: "No refresh token" });
         }
 
-        // Verify token and get user in transaction
+        // Start a single session for the entire transaction
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
             const decoded = jwt.verify(oldRefreshToken, process.env.JWT_REFRESH_SECRET);
-            const session = await mongoose.startSession();
-            session.startTransaction();
 
             const user = await User.findOne({
                 _id: decoded.id,
                 refreshToken: oldRefreshToken
-            }).session(session);
+            }).select('+refreshToken').session(session);
 
-            // Inside refreshToken controller
             if (!user) {
                 await session.abortTransaction();
-                // Correctly clear cookies
                 res.clearCookie('accessToken', cookieOptions)
                     .clearCookie('refreshToken', cookieOptions);
-                return res.status(401).json({ success: false });
+                return res.status(401).json({ success: false, message: "Invalid refresh token" });
             }
 
             // Generate new tokens
@@ -142,23 +138,22 @@ export const refreshToken = async (req, res) => {
                 { expiresIn: '7d' }
             );
 
-            // Atomic update
+            // Update user with new refresh token
             user.refreshToken = newRefreshToken;
             await user.save({ session });
 
-            // Set cookies securely
-            res
-                .cookie("accessToken", newAccessToken, {
-                    ...cookieOptions,
-                    maxAge: 15 * 60 * 1000
-                })
+            // Set cookies
+            res.cookie("accessToken", newAccessToken, {
+                ...cookieOptions,
+                maxAge: 15 * 60 * 1000 // 15 min
+            })
                 .cookie("refreshToken", newRefreshToken, {
                     ...cookieOptions,
-                    maxAge: 7 * 24 * 60 * 60 * 1000
+                    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
                 });
 
             await session.commitTransaction();
-            res.json({ success: true });
+            return res.json({ success: true });
 
         } catch (error) {
             await session.abortTransaction();
@@ -171,10 +166,8 @@ export const refreshToken = async (req, res) => {
         console.error('Refresh token error:', error);
         res.clearCookie('accessToken', cookieOptions)
             .clearCookie('refreshToken', cookieOptions)
-            .status(401).json({ success: false });
+            .status(401).json({ success: false, message: error.message });
     }
-
-
 };
 // 🚀 Logout User
 export const logoutUser = async (req, res) => {

@@ -18,5 +18,4 @@ router.post("/logout", authMiddleware, logoutUser);
 router.get("/me", authMiddleware, getCurrentUser); // Fixed closing quote
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
-
 export default router;

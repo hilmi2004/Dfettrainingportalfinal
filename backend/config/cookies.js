@@ -1,9 +1,6 @@
 export const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'development' ? 'Lax' : 'None',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'lax' in dev
     path: '/',
-    // Remove domain for development (localhost)
-    domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined,
-    maxAge: 7 * 24 * 60 * 60 * 1000
 };

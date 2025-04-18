@@ -6,9 +6,11 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // ...
+
     const authFetch = async (path, init = {}) => {
         try {
-            const response = await fetch(`http://localhost:2000/api/auth${path}`, {
+            const response = await fetch(`http://localhost:2000/api${path}`, {
                 ...init,
                 credentials: 'include',
                 headers: {
@@ -19,6 +21,7 @@ export function AuthProvider({ children }) {
 
             // Handle token refresh
             if (response.status === 401 && !init._retry) {
+                console.log("Attempting token refresh...");
                 const refreshResponse = await fetch('http://localhost:2000/api/auth/refresh', {
                     method: 'POST',
                     credentials: 'include',
@@ -28,12 +31,13 @@ export function AuthProvider({ children }) {
                 });
 
                 if (refreshResponse.ok) {
+                    console.log("Token refresh successful");
                     return authFetch(path, { ...init, _retry: true });
+                } else {
+                    console.log("Token refresh failed");
+                    logout();
+                    return response;
                 }
-
-                // Clear cookies and logout if refresh fails
-                logout();
-                return response;
             }
 
             return response;
@@ -43,9 +47,11 @@ export function AuthProvider({ children }) {
         }
     };
 
+// ...
+
     const checkAuth = async () => {
         try {
-            const response = await authFetch('/me');
+            const response = await authFetch('/auth/me');
 
             if (response.status === 401) {
                 logout();

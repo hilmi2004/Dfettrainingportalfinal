@@ -50,20 +50,14 @@ connectDB(DATABASE_URL);
 
 // Replace existing CORS middleware
 // Replace existing CORS middleware with:
-
 app.use(bodyParser.json());
-// app.use(express.urlencoded({ extended: true }));
-
-// Update CORS middleware
 app.use(cors({
     origin: process.env.NODE_ENV === 'development'
         ? 'http://localhost:5173'
         : 'https://yourdomain.com',
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    exposedHeaders: ['set-cookie'] // Add this line
 }));
-
 // Handle OPTIONS requests
 // app.options('*', cors());
 

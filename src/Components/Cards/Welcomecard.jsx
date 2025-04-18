@@ -10,10 +10,9 @@ const WelcomeCard = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                // Replace axios call with:
-                // Fix the me endpoint call
-                const response = await axios.get("/api/auth/me", {
-                    withCredentials: true // Remove manual Authorization header
+                // Fix: Add the full server URL instead of relative path
+                const response = await axios.get("http://localhost:2000/api/auth/me", {
+                    withCredentials: true // Keep this for cookies
                 });
 
                 if (response.status === 401) {
@@ -27,8 +26,7 @@ const WelcomeCard = () => {
                 }
 
                 console.log("User data:", response.data);
-                // Access the user object from the response data
-                setUser(response.data.user || response.data); // Handle both response structures
+                setUser(response.data.user || response.data);
             } catch (err) {
                 console.error("Full error:", err.response || err);
                 setError(err.response?.data?.message || "Authentication failed");
